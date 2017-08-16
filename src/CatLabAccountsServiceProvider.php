@@ -11,6 +11,16 @@ use Illuminate\Support\ServiceProvider;
 class CatLabAccountsServiceProvider extends ServiceProvider
 {
 
+    public function boot() {
+        $this->publishes([
+            __DIR__.'/../config/services.php' => config_path('services.php')
+        ], 'config');
+
+        $this->publishes([
+            __DIR__.'/../database/migrations/' => database_path('migrations')
+        ], 'migrations');
+    }
+
     /**
      * Register the service provider.
      *
