@@ -1,0 +1,21 @@
+{
+  "name": "catlabinteractive/laravel-catlab-accounts",
+  "description": "Oauth-Openid client for the catlab authentication api for Ll",
+  "type": "library",
+  "license": "Private",
+  "authors": [
+    {
+      "name": "Thijs Van der Schaeghe",
+      "email": "thijs@catlab.be"
+    }
+  ],
+  "autoload": {
+    "psr-4": {
+      "CatLab\\Accounts\\Client\\": "src/"
+    }
+  },
+  "require": {
+    "laravel/socialite": "^3.0",
+    "socialiteproviders/manager": "^3.0"
+  }
+}
