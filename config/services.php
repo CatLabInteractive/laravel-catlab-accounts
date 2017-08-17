@@ -5,7 +5,7 @@ return [
     'catlab' => [
         'client_id' => 'CLIENT_ID',
         'client_secret' => 'CLIENT_SECRET',
-        'redirect'=> url('/login/callback')
+        'redirect'=> '/login/callback'
     ]
 
 ];
