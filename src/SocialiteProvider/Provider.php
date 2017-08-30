@@ -8,8 +8,6 @@ use SocialiteProviders\Manager\OAuth2\User;
 
 class Provider extends AbstractProvider implements ProviderInterface
 {
-    const URL = 'https://accounts.catlab.eu';
-
     /**
      * Unique Provider Identifier.
      */
@@ -25,7 +23,7 @@ class Provider extends AbstractProvider implements ProviderInterface
      */
     protected function getAuthUrl($state)
     {
-        return $this->buildAuthUrlFromBase(self::URL . '/oauth2/authorize', $state);
+        return $this->buildAuthUrlFromBase($this->getUrl() . '/oauth2/authorize', $state);
     }
 
     /**
@@ -33,7 +31,7 @@ class Provider extends AbstractProvider implements ProviderInterface
      */
     protected function getTokenUrl()
     {
-        return self::URL . '/oauth2/token';
+        return $this->getUrl() . '/oauth2/token';
     }
 
     /**
@@ -42,7 +40,7 @@ class Provider extends AbstractProvider implements ProviderInterface
     protected function getUserByToken($token)
     {
         $response = $this->getHttpClient()->get(
-            self::URL . '/api/1.0/users/me',
+            $this->getUrl() . '/api/1.0/users/me',
             [
                 'headers' => [
                     'Authorization' => 'Bearer '.$token,
@@ -73,5 +71,10 @@ class Provider extends AbstractProvider implements ProviderInterface
         return array_merge(parent::getTokenFields($code), [
             'grant_type' => 'authorization_code'
         ]);
+    }
+
+    protected function getUrl()
+    {
+        return \Config::get('services.catlab.url');
     }
 }

@@ -17,6 +17,7 @@ class CreateUsersTable extends Migration
             $table->increments('id');
             $table->string('username');
             $table->integer('catlab_id')->unsigned()->unique();
+            $table->string('catlab_access_token')->nullable();
 
             $table->rememberToken();
             $table->timestamps();
