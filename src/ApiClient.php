@@ -49,6 +49,31 @@ class ApiClient
         return $data;
     }
 
+    /**
+     * @param $id
+     */
+    public function getOrder($id)
+    {
+        $client = new \GuzzleHttp\Client();
+
+        $url = $this->getUrl('orders/' . $id);
+        $res = $client->get(
+            $url,
+            [
+                'headers' => [
+                    'Authorization' => 'Bearer ' . $this->user->catlab_access_token,
+                ]
+            ]
+        );
+
+        $data = json_decode($res->getBody(), true);
+        if (!$data) {
+            throw new \LogicException("Could not decode create order json api request: " . $res->getBody());
+        }
+
+        return $data;
+    }
+
     protected function getUrl($path)
     {
         return \Config::get('services.catlab.url') . '/api/1.0/' . $path;
