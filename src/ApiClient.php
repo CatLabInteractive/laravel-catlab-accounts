@@ -1,6 +1,7 @@
 <?php
 
 namespace CatLab\Accounts\Client;
+
 use GuzzleHttp\Exception\ClientException;
 
 /**
@@ -15,9 +16,9 @@ class ApiClient
     private $user;
 
     /**
-     * @return ApiClient
+     * @param null $user
      */
-    public function __construct($user)
+    public function __construct($user = null)
     {
         $this->user = $user;
     }
@@ -31,12 +32,16 @@ class ApiClient
         $client = new \GuzzleHttp\Client();
 
         $url = $this->getUrl('users/' . $this->user->catlab_id . '/orders');
+
+        $headers = [];
+        if ($this->user) {
+            $headers['Authorization'] = 'Bearer ' . $this->user->catlab_access_token;
+        }
+
         $res = $client->post(
             $url,
             [
-                'headers' => [
-                    'Authorization' => 'Bearer ' . $this->user->catlab_access_token,
-                ],
+                'headers' => $headers,
                 'json' =>$data
             ]
         );
@@ -51,18 +56,23 @@ class ApiClient
 
     /**
      * @param $id
+     * @return mixed
      */
     public function getOrder($id)
     {
         $client = new \GuzzleHttp\Client();
 
         $url = $this->getUrl('orders/' . $id);
+
+        $headers = [];
+        if ($this->user) {
+            $headers['Authorization'] = 'Bearer ' . $this->user->catlab_access_token;
+        }
+
         $res = $client->get(
             $url,
             [
-                'headers' => [
-                    'Authorization' => 'Bearer ' . $this->user->catlab_access_token,
-                ]
+                'headers' => $headers
             ]
         );
 
