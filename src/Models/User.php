@@ -33,6 +33,7 @@ class User extends Model implements
         }
 
         $user->username = $socialiteUser->getNickname();
+        $user->email = $socialiteUser->getEmail();
         $user->catlab_access_token = $socialiteUser->token;
 
         $user->save();

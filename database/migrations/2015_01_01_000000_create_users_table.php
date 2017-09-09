@@ -16,6 +16,7 @@ class CreateUsersTable extends Migration
         Schema::create('users', function (Blueprint $table) {
             $table->increments('id');
             $table->string('username');
+            $table->string('email');
             $table->integer('catlab_id')->unsigned()->unique();
             $table->string('catlab_access_token')->nullable();
 
