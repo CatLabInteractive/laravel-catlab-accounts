@@ -84,6 +84,45 @@ class ApiClient
         return $data;
     }
 
+    /**
+     * Send an email to the user
+     * (or to a target on behalf of the user)
+     * @param $subject
+     * @param $body
+     * @param null $target
+     * @return mixed
+     */
+    public function sendEmail($subject, $body, $target = null)
+    {
+        $client = new \GuzzleHttp\Client();
+
+        $url = $this->getUrl('users/me/mail');
+
+        $headers = [];
+        if ($this->user) {
+            $headers['Authorization'] = 'Bearer ' . $this->user->catlab_access_token;
+        }
+
+        $res = $client->post(
+            $url,
+            [
+                'headers' => $headers,
+                'form_params' => [
+                    'subject' => $subject,
+                    'body' => $body,
+                    'target' => $target
+                ]
+            ]
+        );
+
+        $data = json_decode($res->getBody(), true);
+        if (!$data) {
+            throw new \LogicException("Could not decode create order json api request: " . $res->getBody());
+        }
+
+        return $data;
+    }
+
     protected function getUrl($path)
     {
         return \Config::get('services.catlab.url') . '/api/1.0/' . $path;
