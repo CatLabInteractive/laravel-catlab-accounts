@@ -23,7 +23,10 @@ class Provider extends AbstractProvider implements ProviderInterface
      */
     protected function getAuthUrl($state)
     {
-        return $this->buildAuthUrlFromBase($this->getUrl() . '/oauth2/authorize', $state);
+        $url = $this->buildAuthUrlFromBase('', $state);
+        $url = mb_substr($url, 1);
+
+        return $this->getUrl() . '/oauth2/authorize?reset=1&' . $url;
     }
 
     /**
