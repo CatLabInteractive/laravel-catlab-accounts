@@ -56,13 +56,18 @@ class ApiClient
 
     /**
      * @param $id
+     * @param bool $expanded
      * @return mixed
      */
-    public function getOrder($id)
+    public function getOrder($id, $expanded = false)
     {
         $client = new \GuzzleHttp\Client();
 
         $url = $this->getUrl('orders/' . $id);
+
+        if ($expanded) {
+            $url .= '?expanded=1';
+        }
 
         $headers = [];
         if ($this->user) {
