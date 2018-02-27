@@ -26,7 +26,7 @@ class Provider extends AbstractProvider implements ProviderInterface
         $url = $this->buildAuthUrlFromBase('', $state);
         $url = mb_substr($url, 1);
 
-        $authorizeUrl = \Config::get('services.catlab.authorizePath', '/oauth2/authorize?reset=1');
+        $authorizeUrl = \Config::get('services.catlab.authorizePath', '/oauth2/authorize?reset=1&');
 
         $url = $this->getUrl() . $authorizeUrl . $url;
 
