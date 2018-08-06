@@ -7,7 +7,8 @@ return [
         'client_id' => env('CATLAB_CLIENT_ID'),
         'client_secret' => env('CATLAB_CLIENT_SECRET'),
         'redirect'=> env('APP_URL') . '/login/callback',
-        'authorizePath' => '/oauth2/authorize?reset=1&'
+        'authorizePath' => '/oauth2/authorize?reset=1&',
+        'model' => \App\User::class
     ]
 
 ];

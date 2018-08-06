@@ -2,7 +2,6 @@
 
 namespace CatLab\Accounts\Client\Controllers;
 
-use CatLab\Accounts\Client\Models\User;
 use Illuminate\Foundation\Auth\RedirectsUsers;
 use Laravel\Socialite\Two\InvalidStateException;
 use Route;
@@ -42,9 +41,12 @@ class LoginController
     public function postLogin()
     {
         try {
+
             $socialiteUser = Socialite::driver('catlab')->user();
 
-            $user = User::fromSocialite($socialiteUser);
+            $userClassName = $this->getUserClass();
+
+            $user = call_user_func([ $userClassName, 'fromSocialite' ], $socialiteUser);
             \Auth::login($user);
 
             return redirect()->intended($this->redirectPath());
@@ -71,5 +73,22 @@ class LoginController
     protected function getGuard()
     {
         return property_exists($this, 'guard') ? $this->guard : null;
+    }
+
+    /**
+     * @return string
+     */
+    protected function getUserClass()
+    {
+        $classname = config('services.catlab.model');
+        if (empty($classname)) {
+            $classname = CatLab\Accounts\Client\Models\User::class;
+        }
+
+        if (!is_subclass_of($classname, \CatLab\Accounts\Client\Models\User::class, true)) {
+            throw new \LogicException("User model must extend "  . \CatLab\Accounts\Client\Models\User::class);
+        }
+
+        return $classname;
     }
 }
