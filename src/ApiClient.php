@@ -128,6 +128,21 @@ class ApiClient
         return $data;
     }
 
+    /**
+     * Generate an url to a page on the catlab accounts portal.
+     * @param $path
+     * @param array $parameters
+     * @return string
+     */
+    public function getAccountLink($path, $parameters = [])
+    {
+        $url = \Config::get('services.catlab.url') . $path;
+
+        $parameters['authcode'] = $this->user->catlab_access_token;
+
+        return $url .= '?' . http_build_query($parameters);
+    }
+
     protected function getUrl($path)
     {
         return \Config::get('services.catlab.url') . '/api/1.0/' . $path;
