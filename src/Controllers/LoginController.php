@@ -44,15 +44,46 @@ class LoginController
 
             $socialiteUser = Socialite::driver('catlab')->user();
 
-            $userClassName = $this->getUserClass();
-
-            $user = call_user_func([ $userClassName, 'fromSocialite' ], $socialiteUser);
+            $user = $this->getUserFromSocialite($socialiteUser);
             \Auth::login($user);
 
             return redirect()->intended($this->redirectPath());
         } catch (InvalidStateException $e) {
             return '<p>Invalid state.</p>';
         }
+    }
+
+    protected function getUserFromSocialite($socialiteUser)
+    {
+        // Look for email address
+        $user = $this->getUserFromCatLabId($socialiteUser->getId());
+
+        if (!$user) {
+
+            $userClassName = $this->getUserClass();
+
+            $user = new $userClassName;
+            $user->catlab_id = $socialiteUser->getId();
+        }
+
+        $user->username = $socialiteUser->getNickname();
+        $user->name = $socialiteUser->getName() ? $socialiteUser->getName() : $socialiteUser->getNickname();
+        $user->email = $socialiteUser->getEmail();
+        $user->catlab_access_token = $socialiteUser->token;
+
+        $user->save();
+
+        return $user;
+    }
+
+    /**
+     * @param $id
+     * @return User|null
+     */
+    protected function getUserFromCatLabId($id)
+    {
+        $userClassName = $this->getUserClass();
+        return call_user_func([ $userClassName, 'query' ])->where('catlab_id', '=', $id)->first();
     }
 
     /**
@@ -83,10 +114,6 @@ class LoginController
         $classname = config('services.catlab.model');
         if (empty($classname)) {
             $classname = CatLab\Accounts\Client\Models\User::class;
-        }
-
-        if (!is_subclass_of($classname, \CatLab\Accounts\Client\Models\User::class, true)) {
-            throw new \LogicException("User model must extend "  . \CatLab\Accounts\Client\Models\User::class);
         }
 
         return $classname;
