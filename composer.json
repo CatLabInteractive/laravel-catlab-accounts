@@ -2,7 +2,7 @@
   "name": "catlabinteractive/laravel-catlab-accounts",
   "description": "Oauth-Openid client for the catlab authentication api for Ll",
   "type": "library",
-  "license": "Private",
+  "license": "MIT",
   "authors": [
     {
       "name": "Thijs Van der Schaeghe",
