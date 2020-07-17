@@ -15,8 +15,6 @@ use Socialite;
  */
 class LoginController
 {
-    use RedirectsUsers;
-
     /**
      * Set the routes for the login controller.
      */

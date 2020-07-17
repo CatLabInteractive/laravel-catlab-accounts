@@ -17,16 +17,16 @@ Installation
 \CatLab\Accounts\Client\Controllers\LoginController::setRoutes();
 ```
 
-- Add 
+- Add to EventServiceProvider
 ```
-    /**
-     * The event listener mappings for the application.
-     *
-     * @var array
-     */
-    protected $listen = [
-        \SocialiteProviders\Manager\SocialiteWasCalled::class => [
-            CatLabExtendSocialite::class
-        ],
-    ];
+/**
+ * The event listener mappings for the application.
+ *
+ * @var array
+ */
+protected $listen = [
+    \SocialiteProviders\Manager\SocialiteWasCalled::class => [
+        CatLabExtendSocialite::class
+    ],
+];
 ```
