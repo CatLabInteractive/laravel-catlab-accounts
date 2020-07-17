@@ -129,6 +129,35 @@ class ApiClient
     }
 
     /**
+     * @return string
+     */
+    public function getJsConnectToken()
+    {
+        $client = new \GuzzleHttp\Client();
+
+        $url = $this->getUrl('users/me/jsconnect');
+
+        $headers = [];
+        if ($this->user) {
+            $headers['Authorization'] = 'Bearer ' . $this->user->catlab_access_token;
+        }
+
+        $res = $client->get(
+            $url,
+            [
+                'headers' => $headers
+            ]
+        );
+
+        $data = json_decode($res->getBody(), true);
+        if (!$data) {
+            throw new \LogicException("Could not decode create order json api request: " . $res->getBody());
+        }
+
+        return $data['jsConnect'];
+    }
+
+    /**
      * Generate an url to a page on the catlab accounts portal.
      * @param $path
      * @param array $parameters

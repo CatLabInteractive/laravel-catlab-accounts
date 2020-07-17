@@ -3,6 +3,7 @@
 namespace CatLab\Accounts\Client\Controllers;
 
 use Illuminate\Foundation\Auth\RedirectsUsers;
+use Illuminate\Support\Str;
 use Laravel\Socialite\Two\InvalidStateException;
 use Route;
 use Socialite;
@@ -32,7 +33,26 @@ class LoginController
      */
     public function login()
     {
+        $return = request()->get('return');
+        if ($return && !Str::startsWith(mb_strtolower($return), 'http')) {
+            session()->put('postLoginDirect', request()->get('return'));
+        }
+
         return Socialite::driver('catlab')->redirect();
+    }
+
+    /**
+     * @return mixed|string
+     */
+    public function redirectTo()
+    {
+        if (session()->get('postLoginDirect')) {
+            $path = session()->get('postLoginDirect');
+            session()->remove('postLoginDirect');
+            return $path;
+        }
+
+        return '/';
     }
 
     /**
