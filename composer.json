@@ -15,7 +15,6 @@
     }
   },
   "require": {
-    "laravel/socialite": "3.0.7",
-    "socialiteproviders/manager": "3.0.5"
+    "socialiteproviders/manager": "~3.5"
   }
 }
