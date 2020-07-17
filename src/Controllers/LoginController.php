@@ -2,7 +2,7 @@
 
 namespace CatLab\Accounts\Client\Controllers;
 
-use Illuminate\Foundation\Auth\RedirectsUsers;
+use Illuminate\Foundation\Auth\AuthenticatesUsers;
 use Illuminate\Support\Str;
 use Laravel\Socialite\Two\InvalidStateException;
 use Route;
@@ -15,6 +15,8 @@ use Socialite;
  */
 class LoginController
 {
+    use AuthenticatesUsers;
+
     /**
      * Set the routes for the login controller.
      */
