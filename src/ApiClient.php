@@ -16,6 +16,12 @@ class ApiClient
      */
     private $user;
 
+    /** Seconds to establish the connection. */
+    const CONNECT_TIMEOUT = 5;
+
+    /** Seconds for the whole request; mail delivery through accounts can take a few. */
+    const REQUEST_TIMEOUT = 30;
+
     /**
      * @var ClientInterface|null
      */
@@ -46,7 +52,12 @@ class ApiClient
     protected function getHttpClient()
     {
         if (!$this->httpClient) {
-            $this->httpClient = new \GuzzleHttp\Client();
+            // Never wait forever on accounts: a hung request would otherwise
+            // block the caller until PHP's max_execution_time.
+            $this->httpClient = new \GuzzleHttp\Client([
+                'connect_timeout' => self::CONNECT_TIMEOUT,
+                'timeout' => self::REQUEST_TIMEOUT
+            ]);
         }
         return $this->httpClient;
     }
