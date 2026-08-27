@@ -63,19 +63,23 @@ class ApiClient
     }
 
     /**
-     * @param $data
+     * Create an order for the user.
+     *
+     * Authenticates as the product (client credentials, see
+     * getProductAuthorizationHeaders()); the user is identified by the
+     * numeric accounts id in the url. Requires a user with a catlab_id.
+     *
+     * @param array $data items, callback, partner, maxTransactionFee
      * @return mixed
+     * @throws \LogicException when no user (or no catlab_id) is set
      */
     public function createOrder($data)
     {
         $client = $this->getHttpClient();
 
-        $url = $this->getUrl('users/' . $this->user->catlab_id . '/orders');
+        $url = $this->getUrl('users/' . $this->requireUserId() . '/orders');
 
-        $headers = [];
-        if ($this->user) {
-            $headers['Authorization'] = 'Bearer ' . $this->user->catlab_access_token;
-        }
+        $headers = $this->getProductAuthorizationHeaders();
 
         $res = $client->post(
             $url,
@@ -109,10 +113,9 @@ class ApiClient
         }
 
         // GET orders/{id} is readable by the product that created the order
-        // (client credentials) or by a member of the order's profile (bearer).
-        // The product always owns its orders and its credentials never
-        // expire, so prefer them: the order sync must keep working after the
-        // user's access token has expired.
+        // (client credentials). The product always owns its orders and its
+        // credentials never expire, so the order sync keeps working after
+        // the user's access token has expired.
         $headers = $this->getProductAuthorizationHeaders();
 
         $res = $client->get(
@@ -132,22 +135,25 @@ class ApiClient
 
     /**
      * Send an email to the user
-     * (or to a target on behalf of the user)
+     * (or to a target on behalf of the user; reply-to is the user's address)
+     *
+     * Authenticates as the product (client credentials, see
+     * getProductAuthorizationHeaders()); the user is identified by the
+     * numeric accounts id in the url. Requires a user with a catlab_id.
+     *
      * @param $subject
      * @param $body
      * @param null $target
      * @return mixed
+     * @throws \LogicException when no user (or no catlab_id) is set
      */
     public function sendEmail($subject, $body, $target = null)
     {
         $client = $this->getHttpClient();
 
-        $url = $this->getUrl('users/me/mail');
+        $url = $this->getUrl('users/' . $this->requireUserId() . '/mail');
 
-        $headers = [];
-        if ($this->user) {
-            $headers['Authorization'] = 'Bearer ' . $this->user->catlab_access_token;
-        }
+        $headers = $this->getProductAuthorizationHeaders();
 
         $res = $client->post(
             $url,
@@ -178,10 +184,7 @@ class ApiClient
 
         $url = $this->getUrl('users/me/jsconnect');
 
-        $headers = [];
-        if ($this->user) {
-            $headers['Authorization'] = 'Bearer ' . $this->user->catlab_access_token;
-        }
+        $headers = $this->getUserAuthorizationHeaders();
 
         $res = $client->get(
             $url,
@@ -229,22 +232,48 @@ class ApiClient
     /**
      * Authorization header for calls made by the product itself: HTTP Basic
      * with services.catlab.client_id / client_secret (RFC 6749 §2.3.1).
-     * Falls back to the user's bearer token when no client credentials are
-     * configured.
+     *
+     * CATLAB_CLIENT_ID and CATLAB_CLIENT_SECRET must be set (see
+     * config/services.php): accounts rejects a user token on the product
+     * routes (createOrder, sendEmail, getOrder), so there is no bearer
+     * fallback and a missing configuration is a deployment error.
+     *
      * @return string[]
+     * @throws \LogicException when the client credentials are not configured
      */
     protected function getProductAuthorizationHeaders()
     {
         $clientId = \Config::get('services.catlab.client_id');
         $clientSecret = \Config::get('services.catlab.client_secret');
 
-        if ($clientId && $clientSecret) {
-            return [
-                'Authorization' => 'Basic ' . base64_encode($clientId . ':' . $clientSecret)
-            ];
+        if (!$clientId || !$clientSecret) {
+            throw new \LogicException(
+                'services.catlab.client_id / client_secret are not configured; ' .
+                'set CATLAB_CLIENT_ID and CATLAB_CLIENT_SECRET.'
+            );
         }
 
-        return $this->getUserAuthorizationHeaders();
+        return [
+            'Authorization' => 'Basic ' . base64_encode($clientId . ':' . $clientSecret)
+        ];
+    }
+
+    /**
+     * Numeric accounts id of the current user, for routes that take the user
+     * id in the url. Product-authenticated routes do not accept "me", so a
+     * missing user is a programming error rather than something to send along.
+     * @return int
+     * @throws \LogicException
+     */
+    protected function requireUserId()
+    {
+        if (!$this->user || !$this->user->catlab_id) {
+            throw new \LogicException(
+                'ApiClient needs a user with a catlab_id for this call; ' .
+                'construct it with the user (new ApiClient($user)).'
+            );
+        }
+        return $this->user->catlab_id;
     }
 
     protected function getUrl($path)

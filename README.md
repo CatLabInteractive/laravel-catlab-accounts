@@ -30,3 +30,15 @@ protected $listen = [
     ],
 ];
 ```
+
+Configuration
+-------------
+`config/services.php` reads these environment variables:
+
+- `CATLAB_API`: base url of the accounts server (default `https://accounts.catlab.eu/`).
+- `CATLAB_CLIENT_ID` / `CATLAB_CLIENT_SECRET`: the product's OAuth2 client
+  credentials. **Required.** Besides the login flow they authenticate the
+  product-level API calls in `ApiClient` (`createOrder`, `sendEmail`,
+  `getOrder`), which use HTTP Basic `client_id:client_secret` instead of the
+  user's access token. Accounts does not accept a user token on those
+  routes, so `ApiClient` throws a `LogicException` when they are missing.
