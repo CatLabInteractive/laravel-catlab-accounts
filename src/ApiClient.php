@@ -200,17 +200,77 @@ class ApiClient
 
     /**
      * Generate an url to a page on the catlab accounts portal.
+     *
+     * The link logs the user in on accounts through an `authcode` parameter.
+     * This mints a single-use login token (valid for 15 minutes) for that,
+     * so the url never carries the user's long-lived access token through
+     * browser history, referrers and logs. When the token cannot be minted
+     * this throws rather than falling back to the access token.
+     *
      * @param $path
      * @param array $parameters
      * @return string
+     * @throws \RuntimeException when no login token could be minted
      */
     public function getAccountLink($path, $parameters = [])
     {
         $url = \Config::get('services.catlab.url') . $path;
 
-        $parameters['authcode'] = $this->user->catlab_access_token;
+        $parameters['authcode'] = $this->createLoginToken();
 
         return $url .= '?' . http_build_query($parameters);
+    }
+
+    /**
+     * Mint a single-use login token for the current user.
+     *
+     * POST users/me/login-token with the user's bearer token; accounts
+     * answers 200 {"token": "<opaque>", "expires": <unix timestamp>}. The
+     * token is single-use and expires 15 minutes after minting.
+     *
+     * @return string
+     * @throws \RuntimeException on a non-200 response, a transport error or
+     *   an unexpected body; the live access token must never end up in a url,
+     *   so there is deliberately no fallback.
+     */
+    protected function createLoginToken()
+    {
+        if (!$this->user || !$this->user->catlab_access_token) {
+            throw new \RuntimeException(
+                'ApiClient: cannot mint a login token without a user with a catlab_access_token.'
+            );
+        }
+
+        try {
+            $res = $this->getHttpClient()->post(
+                $this->getUrl('users/me/login-token'),
+                [
+                    'headers' => $this->getUserAuthorizationHeaders(),
+                    'http_errors' => false
+                ]
+            );
+        } catch (\Exception $e) {
+            throw new \RuntimeException(
+                'ApiClient: could not mint a login token on accounts: ' . $e->getMessage(),
+                0,
+                $e
+            );
+        }
+
+        if ($res->getStatusCode() !== 200) {
+            throw new \RuntimeException(
+                'ApiClient: accounts refused to mint a login token (HTTP ' . $res->getStatusCode() . ').'
+            );
+        }
+
+        $data = json_decode($res->getBody(), true);
+        if (!is_array($data) || empty($data['token']) || !is_string($data['token'])) {
+            throw new \RuntimeException(
+                'ApiClient: unexpected login token response from accounts: ' . $res->getBody()
+            );
+        }
+
+        return $data['token'];
     }
 
     /**
