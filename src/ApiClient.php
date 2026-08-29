@@ -134,6 +134,52 @@ class ApiClient
     }
 
     /**
+     * Refund an order.
+     *
+     * Authenticates as the product (client credentials) AND carries the
+     * order's refund token, which the create call returned once and no GET
+     * returns: the product's environment and its database must both be
+     * intact for a refund to be possible.
+     *
+     * Money moves on the other side of this call, so a timeout is NOT a
+     * failure -- the caller must re-read the order rather than assume.
+     *
+     * @param int|string $orderId
+     * @param string $refundToken as returned in `refundToken` by createOrder()
+     * @param float $amount the order total the caller believes it is refunding
+     * @param string $reason recorded on accounts' payment log
+     * @return mixed
+     * @throws \GuzzleHttp\Exception\GuzzleException on any non-2xx response
+     */
+    public function refundOrder($orderId, $refundToken, $amount, $reason = 'api')
+    {
+        $client = $this->getHttpClient();
+
+        $url = $this->getUrl('orders/' . $orderId . '/refund');
+
+        $headers = $this->getProductAuthorizationHeaders();
+
+        $res = $client->post(
+            $url,
+            [
+                'headers' => $headers,
+                'json' => [
+                    'refundToken' => $refundToken,
+                    'amount' => $amount,
+                    'reason' => $reason
+                ]
+            ]
+        );
+
+        $data = json_decode($res->getBody(), true);
+        if (!$data) {
+            throw new \LogicException("Could not decode refund order json api request: " . $res->getBody());
+        }
+
+        return $data;
+    }
+
+    /**
      * Send an email to the user
      * (or to a target on behalf of the user; reply-to is the user's address)
      *
