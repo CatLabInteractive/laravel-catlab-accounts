@@ -145,26 +145,37 @@ class ApiClient
      * is not verified: never treat the result as proof that the visitor owns
      * the address, and never log them in on it.
      *
+     * Optional `$attributes` (`firstName`, `lastName`) are stored only when
+     * accounts creates a new user; an existing account is never changed.
+     *
      * Needs no user on the client (construct it with null).
      *
      * @param string $email
      * @param string $language two-letter language code (nl, en, ...)
+     * @param array $attributes optional: 'firstName', 'lastName' (max 255 chars each)
      * @return int the numeric accounts user id (catlab_id)
      * @throws \GuzzleHttp\Exception\GuzzleException on any non-2xx response
      * @throws \LogicException on an unexpected response body
      */
-    public function findOrCreateUser($email, $language = 'nl')
+    public function findOrCreateUser($email, $language = 'nl', array $attributes = [])
     {
         $client = $this->getHttpClient();
+
+        $body = [
+            'email' => $email,
+            'language' => $language
+        ];
+        foreach ([ 'firstName', 'lastName' ] as $field) {
+            if (isset($attributes[$field]) && $attributes[$field] !== '') {
+                $body[$field] = $attributes[$field];
+            }
+        }
 
         $res = $client->post(
             $this->getUrl('users'),
             [
                 'headers' => $this->getProductAuthorizationHeaders(),
-                'json' => [
-                    'email' => $email,
-                    'language' => $language
-                ]
+                'json' => $body
             ]
         );
 
