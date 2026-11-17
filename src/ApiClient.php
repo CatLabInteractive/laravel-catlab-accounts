@@ -69,7 +69,10 @@ class ApiClient
      * getProductAuthorizationHeaders()); the user is identified by the
      * numeric accounts id in the url. Requires a user with a catlab_id.
      *
-     * @param array $data items, callback, partner, maxTransactionFee
+     * @param array $data items, callback, partner, maxTransactionFee, and
+     *   `guest` (true when the buyer was not logged in at the product: the
+     *   pay page then hides the profile's billing details and invoice option
+     *   from whoever holds the pay URL)
      * @return mixed
      * @throws \LogicException when no user (or no catlab_id) is set
      */
@@ -128,6 +131,91 @@ class ApiClient
         $data = json_decode($res->getBody(), true);
         if (!$data) {
             throw new \LogicException("Could not decode create order json api request: " . $res->getBody());
+        }
+
+        return $data;
+    }
+
+    /**
+     * Find or create an accounts user by email, for a guest checkout.
+     *
+     * Authenticates as the product (client credentials); accounts only
+     * allows products flagged `product_can_create_users`. The answer is the
+     * same for an existing and a new address. A new user has no password and
+     * is not verified: never treat the result as proof that the visitor owns
+     * the address, and never log them in on it.
+     *
+     * Optional `$attributes` (`firstName`, `lastName`) are stored only when
+     * accounts creates a new user; an existing account is never changed.
+     *
+     * Needs no user on the client (construct it with null).
+     *
+     * @param string $email
+     * @param string $language two-letter language code (nl, en, ...)
+     * @param array $attributes optional: 'firstName', 'lastName' (max 255 chars each)
+     * @return int the numeric accounts user id (catlab_id)
+     * @throws \GuzzleHttp\Exception\GuzzleException on any non-2xx response
+     * @throws \LogicException on an unexpected response body
+     */
+    public function findOrCreateUser($email, $language = 'en', array $attributes = [])
+    {
+        $client = $this->getHttpClient();
+
+        $body = [
+            'email' => $email,
+            'language' => $language
+        ];
+        foreach ([ 'firstName', 'lastName' ] as $field) {
+            if (isset($attributes[$field]) && $attributes[$field] !== '') {
+                $body[$field] = $attributes[$field];
+            }
+        }
+
+        $res = $client->post(
+            $this->getUrl('users'),
+            [
+                'headers' => $this->getProductAuthorizationHeaders(),
+                'json' => $body
+            ]
+        );
+
+        $data = json_decode($res->getBody(), true);
+        if (!$data || !isset($data['id'])) {
+            throw new \LogicException("Could not decode find-or-create user json api request: " . $res->getBody());
+        }
+
+        return intval($data['id']);
+    }
+
+    /**
+     * Cancel one of this product's pending orders (e.g. an unpaid checkout
+     * whose seat should be released).
+     *
+     * Authenticates as the product (client credentials). Accounts answers
+     * 409 while a payment for the order is still in progress, which surfaces
+     * as a \GuzzleHttp\Exception\ClientException: leave the order pending
+     * and try again later. An order that is no longer pending is left alone.
+     *
+     * @param int|string $orderId
+     * @return array [ 'id' => ..., 'status' => 'CANCELLED'|'ACCEPTED'|... ]
+     * @throws \GuzzleHttp\Exception\GuzzleException on any non-2xx response
+     * @throws \LogicException on an unexpected response body
+     */
+    public function cancelOrder($orderId)
+    {
+        $client = $this->getHttpClient();
+
+        $res = $client->post(
+            $this->getUrl('orders/' . $orderId . '/cancel'),
+            [
+                'headers' => $this->getProductAuthorizationHeaders(),
+                'json' => new \stdClass()
+            ]
+        );
+
+        $data = json_decode($res->getBody(), true);
+        if (!$data || !isset($data['status'])) {
+            throw new \LogicException("Could not decode cancel order json api request: " . $res->getBody());
         }
 
         return $data;
