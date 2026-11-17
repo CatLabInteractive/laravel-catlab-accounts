@@ -157,7 +157,7 @@ class ApiClient
      * @throws \GuzzleHttp\Exception\GuzzleException on any non-2xx response
      * @throws \LogicException on an unexpected response body
      */
-    public function findOrCreateUser($email, $language = 'nl', array $attributes = [])
+    public function findOrCreateUser($email, $language = 'en', array $attributes = [])
     {
         $client = $this->getHttpClient();
 
