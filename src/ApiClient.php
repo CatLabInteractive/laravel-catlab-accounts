@@ -275,13 +275,18 @@ class ApiClient
      * getProductAuthorizationHeaders()); the user is identified by the
      * numeric accounts id in the url. Requires a user with a catlab_id.
      *
+     * Accounts queues the mail and sends it within a minute.
+     *
      * @param $subject
      * @param $body
      * @param null $target
+     * @param string|null $fromName sender's display name (e.g. the
+     *   organisation); null for Accounts' default. The address is always
+     *   Accounts' own.
      * @return mixed
      * @throws \LogicException when no user (or no catlab_id) is set
      */
-    public function sendEmail($subject, $body, $target = null)
+    public function sendEmail($subject, $body, $target = null, $fromName = null)
     {
         $client = $this->getHttpClient();
 
@@ -296,7 +301,8 @@ class ApiClient
                 'form_params' => [
                     'subject' => $subject,
                     'body' => $body,
-                    'target' => $target
+                    'target' => $target,
+                    'fromName' => $fromName
                 ]
             ]
         );
